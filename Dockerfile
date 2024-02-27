@@ -26,6 +26,8 @@ CMD [ "npm", "run", "dev", "--", "--host"]
 
 FROM node:21-alpine AS serve
 
+ARG NODE_ENV=production
+
 WORKDIR /dash
 
 COPY --from=build /source/be/package.json /dash/package.json  

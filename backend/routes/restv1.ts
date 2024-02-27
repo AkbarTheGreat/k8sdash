@@ -1,9 +1,12 @@
 import express, { Request, Response } from 'express';
+import { getServerStructure } from '../util/services';
 var router = express.Router();
 
-/* GET users listing. */
-router.get('/', function (req: Request, res: Response, next) {
-    res.send('respond with a resource');
+/* GET services running on kubernetes. */
+router.get("/services", (req: Request, res: Response) => {
+    getServerStructure().then(response => {
+        res.json(response);
+    });
 });
 
 export default router;

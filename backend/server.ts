@@ -31,18 +31,18 @@ server.on('listening', onListening);
  */
 
 function normalizePort(val: string | undefined): number {
-	if (!val) {
-		return defaultPort;
-	}
+    if (!val) {
+        return defaultPort;
+    }
 
-	var port = parseInt(val, 10);
+    var port = parseInt(val, 10);
 
-	if (isNaN(port) || port <= 0) {
-		return defaultPort;
-	}
+    if (isNaN(port) || port <= 0) {
+        return defaultPort;
+    }
 
-	// port number
-	return port;
+    // port number
+    return port;
 }
 
 /**
@@ -50,7 +50,7 @@ function normalizePort(val: string | undefined): number {
  */
 
 function onError(error: Error) {
-	console.error(error);
+    console.error(error);
 }
 
 /**
@@ -58,13 +58,13 @@ function onError(error: Error) {
  */
 
 function onListening() {
-	var addr = server.address();
-	if (!addr) {
-		// addr is empty or null, not sure what to do here, so just skip it.
-		return;
-	}
-	var bind = typeof addr === 'string'
-		? 'pipe ' + addr
-		: 'port ' + addr.port;
-	debug('Listening on ' + bind);
+    var addr = server.address();
+    if (!addr) {
+        // addr is empty or null, not sure what to do here, so just skip it.
+        return;
+    }
+    var bind = typeof addr === 'string'
+        ? 'pipe ' + addr
+        : 'port ' + addr.port;
+    debug('Listening on ' + bind);
 }
