@@ -32,10 +32,10 @@ COPY --from=build /source/be/package.json /dash/package.json
 COPY --from=build /source/be/package-lock.json /dash/package-lock.json 
 RUN npm install
 
-COPY --from=build /source/be /dash
+COPY --from=build /source/be/dist /dash
 COPY --from=build /source/fe/dist /dash/frontend
 
 EXPOSE 8080
 
-CMD [ "node", "/dash/bin/www" ]
+CMD [ "node", "/dash/server.js" ]
 
