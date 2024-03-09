@@ -5,3 +5,4 @@
 /.vs
 /k8s_files
 /env.variables
+/config.json

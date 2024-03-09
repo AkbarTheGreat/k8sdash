@@ -8,6 +8,7 @@ services:
     command: ["npm", "run", "dev"]
     volumes:
       - ./k8s_files:/var/run/secrets/kubernetes.io/serviceaccount
+      - ./config.json:/dash/config.json
     env_file: "env.variables"
     ports:
       - "8080:3000"

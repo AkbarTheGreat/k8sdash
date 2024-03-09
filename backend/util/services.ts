@@ -1,10 +1,24 @@
 import axios from 'axios';
+interface Repo {
+    hub: string,
+    token?: string,
+}
+
+interface RepoConfig {
+    [key: string]: Repo,
+}
+
+var repoConfig: RepoConfig = require('../config.json');
 
 const k8s = require('@kubernetes/client-node');
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
+interface Tag {
+    last_updated: string,
+    name: string,
+}
 export async function getServerStructure() {
     const images = await imagesForPods();
     const list = await buildReturnStruct(images);
@@ -35,31 +49,36 @@ async function buildReturnStruct(images: Array<string>) {
     const fullStruct = [];
     for (let image of images) {
         const [name, version] = image.split(':');
-        let latest = 'Unknown';
-        try {
-            latest = await latestForImage(name);
-        } catch (err) {
-            console.error(err);
-            latest = 'Unknown';
-        }
         const innerStruct = {
             name: name,
             running: version,
-            latest: latest
+            latest: '-'
         }
         fullStruct.push(innerStruct);
     }
     return fullStruct;
 }
 
-async function latestForImage(image: string) {
-    const [host, namespace, repository] = splitUpImage(image);
-    const tags = await repoTags('https://hub.docker.com/v2/', repository, namespace);
-    if (!tags || tags.length == 0) {
-        return 'NotFound';
+export async function latestForImage(image: string) {
+    try {
+        const [host, namespace, repository] = splitUpImage(image);
+        if (!repoConfig.hasOwnProperty(host)) {
+            return 'Unknown Repo: ' + host;
+        }
+        const tags = await repoTags(repoConfig[host].hub, repository, namespace) as Tag[] | undefined;
+        if (!tags || tags.length == 0) {
+            return 'NotFound';
+        }
+        return latestTag(tags);
+    } catch (err) {
+        console.error(err);
+        return "Error";
     }
-    console.log(tags);
-    return 'Tagged';
+}
+
+function latestTag(tags: Tag[]) {
+    tags.sort((a, b) => b.last_updated.localeCompare(a.last_updated))
+    return tags[0].name;
 }
 
 function splitUpImage(image: string) {
@@ -67,7 +86,10 @@ function splitUpImage(image: string) {
     if (elements.length > 2) {
         return elements;
     }
-    return ['hub.docker.com', elements[0], elements[1]];
+    if (elements[0].match("\\.")) {
+        return [elements[0], elements[1], elements[1]];
+    }
+    return ['docker.io', elements[0], elements[1]];
 }
 
 export async function repoTags(apiRoot: string, repo: string, namespace: string): Promise<Object[] | undefined> {
