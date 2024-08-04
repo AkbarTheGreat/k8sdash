@@ -78,6 +78,8 @@ export async function latestForImage(image: string) {
 
 function latestTag(tags: Tag[]) {
     tags.sort((a, b) => b.last_updated.localeCompare(a.last_updated))
+    if (tags[0].name === "latest" && tags.length > 1)
+        return tags[1].name
     return tags[0].name;
 }
 
