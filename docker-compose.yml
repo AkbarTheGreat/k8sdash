@@ -20,7 +20,19 @@
       "env_file": "env.variables",
       "ports": [
         "8080:3000"
-      ]
+      ],
+      "develop": {
+        "watch": [
+          {
+            "path": "./backend",
+            "action": "rebuild"
+          },
+          {
+            "path": "./frontend",
+            "action": "rebuild"
+          }
+        ]
+      }
     }
   }
 }
