@@ -4,11 +4,13 @@ interface Repo {
     token?: string,
 }
 
-interface RepoConfig {
-    [key: string]: Repo,
+interface AppConfig {
+    repositories: {
+        [key: string]: Repo,
+    },
 }
 
-var repoConfig: RepoConfig = require('../config.json');
+var appConfig: AppConfig = require('../config.json');
 
 const k8s = require('@kubernetes/client-node');
 const kc = new k8s.KubeConfig();
@@ -62,10 +64,10 @@ async function buildReturnStruct(images: Array<string>) {
 export async function latestForImage(image: string) {
     try {
         const [host, namespace, repository] = splitUpImage(image);
-        if (!repoConfig.hasOwnProperty(host)) {
+        if (!appConfig.repositories.hasOwnProperty(host)) {
             return 'Unknown Repo: ' + host;
         }
-        const tags = await repoTags(repoConfig[host].hub, repository, namespace) as Tag[] | undefined;
+        const tags = await repoTags(appConfig.repositories[host].hub, repository, namespace) as Tag[] | undefined;
         if (!tags || tags.length == 0) {
             return 'NotFound';
         }

@@ -1,6 +1,8 @@
 {
   "!!Copy this file to backend/config.json, delete this line, and edit to match repositories you use": {},
-  "docker.io": {
-    "hub": "https://hub.docker.com/v2/"
+  "repositories": {
+    "docker.io": {
+      "hub": "https://hub.docker.com/v2/"
+    }
   }
 }
