@@ -2,17 +2,25 @@
     import { ref } from 'vue';
     import http from '../http-common';
 
-    async function getLatest(name: string) {
-        return await http.get("/docker/latest?image=" + name)
+    interface Service {
+        name: string,
+        running: string,
+        latest: string,
     }
 
-    const services = ref([]);
+    const services = ref([] as Service[]);
+
+    async function getLatest(service: Service) {
+        const response = await http.get("/docker/latest?image=" + service.name)
+        service.latest = response.data;
+    }
+
     http.get("/services")
         .then(response => {
             services.value = response.data;
-            for (let service of services.value as { name: string, latest: string }[]) {
+            for (let service of services.value) {
                 if (service.latest === '-') {
-                    getLatest(service.name).then(latestResponse => service.latest = latestResponse.data)
+                    getLatest(service);
                 }
             }
         })
