@@ -1,4 +1,4 @@
-FROM node:21-alpine as build
+FROM node:21-alpine AS build
 
 # Install dependencies first, to save time later.
 
