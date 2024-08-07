@@ -26,6 +26,8 @@ CMD [ "npm", "run", "dev", "--", "--host"]
 
 FROM node:21-alpine AS serve
 
+RUN apk add --no-cache crane
+
 ARG NODE_ENV=production
 
 WORKDIR /dash

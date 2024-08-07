@@ -19,4 +19,12 @@ app.use(PrimeVue);
 app.component('DataColumn', Column);
 app.component('DataTable', DataTable);
 
-app.mount('#app')
+fetch(import.meta.env.BASE_URL + 'config.json')
+   .then((response) => response.json())
+   .then((config) => {
+      for (const key in config) {
+         app.provide(key, config[key])
+      }
+      app.mount('#app')
+   })
+

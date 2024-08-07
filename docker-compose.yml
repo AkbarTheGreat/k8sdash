@@ -1,6 +1,12 @@
 {
   "version": "3",
   "services": {
+    "redis": {
+      "image": "redis:7.4.0",
+      "expose": [
+        "6379"
+      ]
+    },
     "dash": {
       "build": {
         "context": ".",
@@ -15,7 +21,7 @@
       ],
       "volumes": [
         "./k8s_files:/var/run/secrets/kubernetes.io/serviceaccount",
-        "./config.json:/dash/config.json"
+        "./config.json:/dash/frontend/config.json"
       ],
       "env_file": "env.variables",
       "ports": [

@@ -1,8 +1,8 @@
 {
-  "!!Copy this file to backend/config.json, delete this line, and edit to match repositories you use": {},
-  "repositories": {
-    "docker.io": {
-      "hub": "https://hub.docker.com/v2/"
+  "!!Copy this file to backend/config.json, delete this line, and edit to add any links you may want for convenience": {},
+  "links": {
+    "K8s": {
+      "url": "https://kubernetes-host.sample.domain"
     }
   }
 }

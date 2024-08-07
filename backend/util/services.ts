@@ -1,26 +1,18 @@
-import axios from 'axios';
-interface Repo {
-    hub: string,
-    token?: string,
-}
-
-interface AppConfig {
-    repositories: {
-        [key: string]: Repo,
-    },
-}
-
-var appConfig: AppConfig = require('../config.json');
+const util = require('util');
+const exec = util.promisify(require('child_process').exec);
+import Redis from 'ioredis';
 
 const k8s = require('@kubernetes/client-node');
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+const redis = new Redis({ host: 'redis', port: 6379 });
 
 interface Tag {
-    last_updated: string,
+    lastUpdated: string,
     name: string,
 }
+
 export async function getServerStructure() {
     const images = await imagesForPods();
     const list = await buildReturnStruct(images);
@@ -63,11 +55,7 @@ async function buildReturnStruct(images: Array<string>) {
 
 export async function latestForImage(image: string) {
     try {
-        const [host, namespace, repository] = splitUpImage(image);
-        if (!appConfig.repositories.hasOwnProperty(host)) {
-            return 'Unknown Repo: ' + host;
-        }
-        const tags = await repoTags(appConfig.repositories[host].hub, repository, namespace) as Tag[] | undefined;
+        const tags = await repoTags(image) as Tag[] | undefined;
         if (!tags || tags.length == 0) {
             return 'NotFound';
         }
@@ -79,30 +67,49 @@ export async function latestForImage(image: string) {
 }
 
 function latestTag(tags: Tag[]) {
-    tags.sort((a, b) => b.last_updated.localeCompare(a.last_updated))
+    for (let tag of tags) {
+        if (tag.name.match('^v?\\d+\\.\\d+\\.\\d+$')) {
+            return tag.name;
+        }
+    }
+
     if (tags[0].name === "latest" && tags.length > 1)
         return tags[1].name
     return tags[0].name;
 }
 
-function splitUpImage(image: string) {
-    const elements = image.split('/');
-    if (elements.length > 2) {
-        return elements;
-    }
-    if (elements[0].match("\\.")) {
-        return [elements[0], elements[1], elements[1]];
-    }
-    return ['docker.io', elements[0], elements[1]];
+async function repoTags(image: string): Promise<Tag[] | undefined> {
+    const tagStrings = await tagList(image);
+
+    const tags: Tag[] = await Promise.all(tagStrings.map(async (tag: string) => {
+        return {
+            name: tag,
+            lastUpdated: await tagCreated(image, tag),
+        }
+    }));
+
+    tags.sort((a, b) => b.lastUpdated.localeCompare(a.lastUpdated))
+    return tags;
 }
 
-export async function repoTags(apiRoot: string, repo: string, namespace: string): Promise<Object[] | undefined> {
-    const tagsUrl = `${apiRoot}repositories/${namespace}/${repo}/tags?page_size=100`
-    const tagsResults = await axios.get(tagsUrl)
-    if (!tagsResults || !tagsResults.data || !tagsResults.data.results) {
-        return;
+async function tagList(image: string): Promise<string[]> {
+    const cached = await redis.get(`crane-tags-${image}`);
+    if (cached) return JSON.parse(cached);
+    const { stdout } = await exec(`crane ls --omit-digest-tags ${image}`);
+    let tags = await stdout.toString().split('\n').filter((tag: string) => tag === 'latest' || tag.match('^v?\\d+\\.\\d+\\.\\d+$'));
+    if (tags.length < 2) {
+        tags = await stdout.toString().split('\n');
     }
-    const tags = tagsResults.data.results;
+    redis.set(`crane-tags-${image}`, JSON.stringify(tags), 'EX', 24 * 3600);
     return tags;
+}
+
+async function tagCreated(image: string, tag: string) {
+    const cached = await redis.get(`crane-tagCreated-${image}-${tag}`);
+    if (cached) return cached;
+    const { stdout } = await exec(`crane config ${image}:${tag}`);
+    const config = JSON.parse(stdout);
+    redis.set(`crane-tagCreated-${image}-${tag}`, config.created, 'EX', 24 * 3600);
+    return config.created;
 }
 
